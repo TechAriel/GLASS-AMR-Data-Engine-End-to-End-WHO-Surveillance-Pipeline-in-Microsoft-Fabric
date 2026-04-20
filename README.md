@@ -56,4 +56,4 @@ Standard global averages in AMR can be dangerously misleading if the underlying 
 
 ## How to Navigate this Repository
 * **`steps.md`**: A detailed, step-by-step walkthrough of the pipeline construction, from raw ingestion to the final automated trigger (for future automated data ingestion and processing).
-* **`src/`**: Contains the PySpark notebooks and DAX code used in the Semantic Model.
+* **`src/`**: Contains the PySpark notebooks and DAX code used in the Semantic Model
