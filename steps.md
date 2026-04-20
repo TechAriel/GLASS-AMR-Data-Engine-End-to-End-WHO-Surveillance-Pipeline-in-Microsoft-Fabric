@@ -23,7 +23,7 @@ I mapped the local files directly to the `AMR_Bronze` Lakehouse. Under the OneLa
 
 **Architectural Decision:** *Why keep them as raw CSVs instead of immediately converting to Delta tables?* By keeping the Bronze layer in its native format, I get to preserve a cryptographically auditable "source of truth." If a downstream PySpark transformation fails or business logic changes, I can instantly replay the pipeline from these original files without needing to re-extract from the WHO portal.
 
-![Bronze Landing in OneLake](assets/screenshots/02_bronze_files.png)
+![Bronze Landing in OneLake](assets/screenshots/bronze_files.png)
 
 ---
 
@@ -47,11 +47,10 @@ I deployed a PySpark notebook (`01_Bronze_to_Silver.py`) attached to the `AMR_Si
 ### 2.3 Writing to Delta
 I wrote the cleansed DataFrames back to OneLake using the Delta format . This gives us ACID transactions, time travel, and predicate pushdown—meaning Power BI will eventually query this data exponentially faster than raw CSVs.
 
-![PySpark Silver Notebook](assets/screenshots/03_silver_notebook.png)
-> *[Caption: Executing the PySpark unpivot transformation in the Fabric Notebook, writing clean Delta tables to the Silver Lakehouse.]*
+![PySpark Silver Notebook](assets/screenshots/silver_notebook.png)
+>*[Executing the PySpark transformation in the Fabric Notebook, writing clean Delta tables to the Silver Lakehouse.]*
 
-![Silver Notebook Execution](assets/screenshots/03_silver_notebook.png)
-> *[Action: Take a screenshot of a PySpark dataframe `.show()` output inside your notebook.]*
+![Silver Tables](assets/screenshots/silver_tables.png)
 
 ---
 
@@ -64,8 +63,10 @@ Created `AMR_Gold` Lakehouse with a secondary PySpark notebook (`02_Silver_to_Go
 * Built 4 Fact tables, utilizing PySpark `join` operations to replace raw string values with the optimized integer IDs.
 * Filtered all data to a strict 2019-2023 window.
 
-![Star Schema in Power BI](assets/screenshots/04_star_schema.png)
-> *[Action: Take a screenshot of the Power BI Model View showing the tables connected with relationship lines.]*
+![Gold Notebook](assets/screenshots/gold_notebook.png)
+
+![Gold Tables](assets/screenshots/gold_tables.png)
+
 
 
 
@@ -90,8 +91,9 @@ I joined our Silver data against these new Dimensions, dropping the heavy string
 ### 3.3 DirectLake Integration
 By writing these final Gold tables back to OneLake as Delta Parquet files, I unlocked **Microsoft Fabric's DirectLake mode**. Power BI can now query these Parquet files directly in memory. There is no traditional data import, no semantic model refresh limits, and zero latency between the PySpark ETL finishing and the dashboard updating.
 
-![Star Schema Semantic Model](assets/screenshots/04_star_schema.png)
-> *[Caption: The final Gold Star Schema in Power BI's Model View, showing clean 1-to-Many relationships flowing from Dimensions to Facts.]*
+![Star Schema in Power BI](assets/screenshots/star_schema.png)
+
+> *[The final Gold Star Schema in Power BI's Model View, showing clean 1-to-Many relationships flowing from Dimensions to Facts.]*
 ---
 
 ## Phase 4: The Intelligence Engine (DAX & Semantic Model)
@@ -108,16 +110,23 @@ I created a dual-line system for the final UI:
 * A raw global average (which is heavily skewed by a few wealthy nations reporting massive datasets).
 * A `Strict_AMR_Trend` measure. This DAX formula checks the `Data_Reliability_Score`. If the score falls below 40%, the formula outputs `BLANK`, effectively masking the data point. This prevents a sudden drop in lab quality from appearing as a false spike in global resistance.
 
+![Metrics Table](ssets/screenshots/metrics_table.png)
+
+
 ### Dashboard Deliverables:
 The final UI consists of three interconnected pages:
 1. **Global Overview:** Tracking testing density and active reporting rates.
-   ![Global Overview Dashboard](assets/screenshots/05_dashboard_p1.png)
-3. **Scientific Insights:** Tracking specific bacteria/drug resistance trends via heatmaps and masked line charts.
-   ![Scientific Insights Dashboard](assets/screenshots/06_dashboard_p2.png)
-5. **Data Quality & Gap Detection:** A dynamic map and funnel identifying which regions are failing to report actionable intelligence.
-   ![Data Quality Dashboard](assets/screenshots/07_dashboard_p3.png)
-![Scientific Insights Dashboard](assets/screenshots/06_dashboard_p2.png)
-> *[Caption: The Scientific Insights page. Note the dual trendlines, allowing policy-makers to separate genuine resistance spikes from data artifacts.]*
+   
+   ![Global Overview Dashboard](assets/screenshots/dashboard_p1.png)
+   
+2. **Scientific Insights:** Tracking specific bacteria/drug resistance trends via heatmaps and masked line charts.
+   
+   ![Scientific Insights Dashboard](assets/screenshots/dashboard_p2.png)
+   > *[The Scientific Insights page. Note the dual trendlines, allowing policy-makers to separate genuine resistance spikes from data artifacts.]*
+   
+3. **Data Quality & Gap Detection:** A dynamic map and funnel identifying which regions are failing to report actionable intelligence.
+   
+   ![Data Quality Dashboard](assets/screenshots/dashboard_p3.png)
 
 ---
 
@@ -133,7 +142,7 @@ When a new year of data is dropped into the `Bronze_Landing` folder, the pipelin
 
 This architecture reduces the time-to-insight from weeks (manual Excel manipulation) to minutes.
 
-![Fabric Data Pipeline](assets/screenshots/08_pipeline.png)
-> *[Caption: The automated Fabric pipeline orchestrating the PySpark ETL and modeling.]*
+![Fabric Data Pipeline](assets/screenshots/pipeline.png)
+> *[The automated Fabric pipeline orchestrating the PySpark ETL and modeling.]*
 ---
 
