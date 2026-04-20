@@ -110,7 +110,7 @@ I created a dual-line system for the final UI:
 * A raw global average (which is heavily skewed by a few wealthy nations reporting massive datasets).
 * A `Strict_AMR_Trend` measure. This DAX formula checks the `Data_Reliability_Score`. If the score falls below 40%, the formula outputs `BLANK`, effectively masking the data point. This prevents a sudden drop in lab quality from appearing as a false spike in global resistance.
 
-![Metrics Table](ssets/screenshots/metrics_table.png)
+![Metrics Table](assets/screenshots/metrics_table.png)
 
 
 ### Dashboard Deliverables:
