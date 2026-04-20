@@ -1,1 +1,118 @@
+// ==========================================
+// Core Decision Intelligence Measures
+// ==========================================
 
+
+// Tracks the pipeline drop-off: What percentage of officially enrolled countries actually submitted patient data?
+%_Active_Reporting = 
+DIVIDE(
+    SUM(fact_system_capacity[Reporting_Any_BCI]), 
+    SUM(fact_system_capacity[Enrolled_CTAs])
+)
+
+
+
+// Calculates the Year-over-Year (YoY) shift in global resistance to spot emerging pathogen threats.
+AMR_YoY_Change = 
+VAR CurrentYearRes = AVERAGE(fact_global_amr[Median])
+VAR PrevYearRes = 
+    CALCULATE(
+        AVERAGE(fact_global_amr[Median]), 
+        FILTER(
+            ALL(dim_year), 
+            dim_year[Years] = MAX(dim_year[Years]) - 1
+        )
+    )
+RETURN 
+CurrentYearRes - PrevYearRes
+
+
+
+// Diagnostic metric: Raw ratio of tested isolates to total samples collected.
+AST_Check = DIVIDE(
+                  SUM(fact_country_coverage[TotalSpecimenIsolatesWithAST]), 
+                  SUM(fact_country_coverage[TotalSpecimenIsolates])
+)
+
+
+
+// Evaluates lab diligence: The percentage of collected bacteria samples that actually underwent Antimicrobial Susceptibility Testing (AST).
+AST_Completeness_% = 
+DIVIDE(
+    SUM(fact_country_coverage[TotalSpecimenIsolatesWithAST]),
+    SUM(fact_country_coverage[TotalSpecimenIsolates])
+)
+
+
+// Dynamic UI Map logic: Flags countries in Bright Red if they have dangerously low testing volume AND poor AST compliance.
+Critical_Surveillance_Gap = 
+VAR _TestDensity = AVERAGE(fact_country_coverage[BCIsPerMillion])
+VAR _ASTComp = 
+    DIVIDE(
+        SUM(fact_country_coverage[TotalSpecimenIsolatesWithAST]),
+        SUM(fact_country_coverage[TotalSpecimenIsolates])
+    )
+RETURN
+IF(
+    _TestDensity < 50 && _ASTComp < 0.50,
+    "#D32F2F", // Bright Red hex code
+    "#E0E0E0"  // Light Grey hex code
+)
+
+
+
+// The core data-quality engine: A weighted index (0-100) judging a country's baseline lab infrastructure, AST diligence, and sheer testing volume.
+Data_Reliability_Score = 
+// 1. Calculate the base metrics internally
+VAR _ImplScore = 
+    CALCULATE(
+        SUM(fact_current_indicators[Percentage]),
+        fact_current_indicators[Status] = "Available"
+    ) / 100
+
+VAR _ASTComp = 
+    DIVIDE(
+        SUM(fact_country_coverage[TotalSpecimenIsolatesWithAST]),
+        SUM(fact_country_coverage[TotalSpecimenIsolates])
+    )
+
+VAR _TestDensity = AVERAGE(fact_country_coverage[BCIsPerMillion])
+
+// 2. Apply the weights (40% Infrastructure, 40% AST Diligence, 20% Volume Cap)
+VAR SysWeight = _ImplScore * 0.40 
+VAR AstWeight = _ASTComp * 0.40   
+VAR VolWeight = MIN(_TestDensity / 500, 1) * 0.20 
+
+// 3. Return final index
+RETURN 
+(SysWeight + AstWeight + VolWeight) * 100
+
+
+
+// Measures national lab readiness by calculating the percentage of WHO capacity indicators marked as 'Available'.
+Implementation_Score = 
+CALCULATE(
+    SUM(fact_current_indicators[Percentage]),
+    fact_current_indicators[Status] = "Available"
+) / 100
+
+
+
+
+// The raw, unadjusted global average of pathogen resistance rates.
+Resistance_Median_Avg = 
+AVERAGE(fact_global_amr[Median])
+
+
+// The bias-adjustment engine: Masks resistance data (returns BLANK) if the underlying Data Reliability Score is too weak to trust.
+Strict_AMR_Trend = 
+IF(
+    [Data_Reliability_Score] < 40,
+    BLANK(), 
+    AVERAGE(fact_global_amr[Median])
+)
+
+
+// Measures national surveillance footprint: Average Blood Culture Isolates (BCIs) tested per one million citizens.
+Testing_Density = 
+AVERAGE(fact_country_coverage[BCIsPerMillion])
