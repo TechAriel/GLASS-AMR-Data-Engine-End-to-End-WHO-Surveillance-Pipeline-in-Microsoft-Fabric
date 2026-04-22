@@ -39,7 +39,7 @@ Standard global averages in AMR can be dangerously misleading if the underlying 
 
 ## The Domain Challenge: Why this isn't a standard ETL project
 Analysing global AMR data requires handling a critical **granularity mismatch**. 
-Standard global averages in AMR can be dangerously misleading if the underlying laboratory capacity is weak. A 90% resistance rate to Penicillins in a country testing 5 patients means something entirely different than a 15% rate in a country testing 50,000 patients.
+Standard global averages in AMR can be dangerously misleading if the underlying laboratory capacity is weak. A 90% resistance rate to Penicillins in a country testing 5 patients means something entirely different than a 15% rate in a country testing 50,000 patients
 
 ## Tech Stack
 * **Storage & Compute:** Microsoft Fabric, OneLake
